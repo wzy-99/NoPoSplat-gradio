@@ -59,4 +59,4 @@ If you would like to train on the high-resolution DL3DV dataset, you will need t
 ## Additional Datasets
 We also test our method on DTU and ScanNet++ datasets for novel view synthesis, and ScanNet-1500 for pose estimation. We will provide the download link later.
 
-If you would like to train and/or evaluate on additional datasets, just modify the [data processing scripts](src/scripts) to convert the dataset format. Kindly note the [camera conventions](https://github.com/cvg/depthsplat/tree/main?tab=readme-ov-file#camera-conventions) used in this codebase.
+If you would like to train and/or evaluate on additional datasets, just modify the [data processing scripts](src/scripts) to convert the dataset format. Kindly note the [camera conventions](https://github.com/cvg/NoPoSplat/tree/main?tab=readme-ov-file#camera-conventions) used in this codebase.

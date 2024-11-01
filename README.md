@@ -1,5 +1,5 @@
 <p align="center">
-  <h2 align="center">No Pose, No Problem <img src="https://noposplat.github.io/static/images/icon.svg" width="30" style="position: relative; top: 1px;"> <br> Surprisingly Simple 3D Gaussian Splats from Sparse Unposed Images</h2>
+  <h2 align="center">No Pose, No Problem <img src="https://noposplat.github.io/static/images/icon.svg" width="20" style="position: relative; top: 1px;"> <br> Surprisingly Simple 3D Gaussian Splats from Sparse Unposed Images</h2>
  <p align="center">
     <a href="https://botaoye.github.io/">Botao Ye</a>
     ·
@@ -15,7 +15,7 @@
     ·
     <a href="https://pengsongyou.github.io/">Songyou Peng</a>
   </p>
-  <h3 align="center"><a href="https://arxiv.org/abs/xxxx.xxxxx">Paper</a> | <a href="https://noposplat.github.io/">Project Page</a> | <a href="#" style="color: grey; pointer-events: none; text-decoration: none;">Online Demo (Coming Soon)</a> </h3>
+  <h3 align="center"><a href="https://arxiv.org/abs/2410.24207">Paper</a> | <a href="https://noposplat.github.io/">Project Page</a> | <a href="#" style="color: grey; pointer-events: none; text-decoration: none;">Online Demo (Coming Soon)</a> </h3>
   <div align="center"></div>
 </p>
 <p align="center">

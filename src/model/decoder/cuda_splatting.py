@@ -11,7 +11,6 @@ from jaxtyping import Float
 from torch import Tensor
 
 from ...geometry.projection import get_fov, homogenize_points
-from ..encoder.epipolar.conversions import depth_to_relative_disparity
 
 
 def get_projection_matrix(
@@ -229,49 +228,3 @@ def render_cuda_orthographic(
 
 
 DepthRenderingMode = Literal["depth", "disparity", "relative_disparity", "log"]
-
-
-def render_depth_cuda(
-    extrinsics: Float[Tensor, "batch 4 4"],
-    intrinsics: Float[Tensor, "batch 3 3"],
-    near: Float[Tensor, " batch"],
-    far: Float[Tensor, " batch"],
-    image_shape: tuple[int, int],
-    gaussian_means: Float[Tensor, "batch gaussian 3"],
-    gaussian_covariances: Float[Tensor, "batch gaussian 3 3"],
-    gaussian_opacities: Float[Tensor, "batch gaussian"],
-    scale_invariant: bool = True,
-    mode: DepthRenderingMode = "depth",
-) -> Float[Tensor, "batch height width"]:
-    # Specify colors according to Gaussian depths.
-    camera_space_gaussians = einsum(
-        extrinsics.inverse(), homogenize_points(gaussian_means), "b i j, b g j -> b g i"
-    )
-    fake_color = camera_space_gaussians[..., 2]
-
-    if mode == "disparity":
-        fake_color = 1 / fake_color
-    elif mode == "relative_disparity":
-        fake_color = depth_to_relative_disparity(
-            fake_color, near[:, None], far[:, None]
-        )
-    elif mode == "log":
-        fake_color = fake_color.minimum(near[:, None]).maximum(far[:, None]).log()
-
-    # Render using depth as color.
-    b, _ = fake_color.shape
-    result = render_cuda(
-        extrinsics,
-        intrinsics,
-        near,
-        far,
-        image_shape,
-        torch.zeros((b, 3), dtype=fake_color.dtype, device=fake_color.device),
-        gaussian_means,
-        gaussian_covariances,
-        repeat(fake_color, "b g -> b g c ()", c=3),
-        gaussian_opacities,
-        scale_invariant=scale_invariant,
-        use_sh=False,
-    )
-    return result.mean(dim=1)

@@ -19,8 +19,6 @@ from ..types import Gaussians
 from .backbone import Backbone, BackboneCfg, get_backbone
 from .common.gaussian_adapter import GaussianAdapter, GaussianAdapterCfg, UnifiedGaussianAdapter
 from .encoder import Encoder
-from .epipolar.depth_predictor_monocular import DepthPredictorMonocular
-from .epipolar.epipolar_transformer import EpipolarTransformer, EpipolarTransformerCfg
 from .visualization.encoder_visualizer_epipolar_cfg import EncoderVisualizerEpipolarCfg
 
 
@@ -63,10 +61,7 @@ def rearrange_head(feat, patch_size, H, W):
 
 class EncoderNoPoSplatMulti(Encoder[EncoderNoPoSplatCfg]):
     backbone: nn.Module
-    depth_predictor: DepthPredictorMonocular
-    to_gaussians: nn.Sequential
     gaussian_adapter: GaussianAdapter
-    high_resolution_skip: nn.Sequential
 
     def __init__(self, cfg: EncoderNoPoSplatCfg) -> None:
         super().__init__(cfg)
@@ -167,15 +162,7 @@ class EncoderNoPoSplatMulti(Encoder[EncoderNoPoSplatCfg]):
                 all_mean_res.append(res2)
 
             # for the 3DGS heads
-            if self.gs_params_head_type == 'linear':
-                GS_res1 = rearrange_head(self.gaussian_param_head(dec1[-1]), self.patch_size, h, w)
-                GS_res2 = rearrange_head(self.gaussian_param_head2(dec2[-1]), self.patch_size, h, w)
-            elif self.gs_params_head_type == 'dpt':
-                GS_res1 = self.gaussian_param_head([tok.float() for tok in dec1], shape1[0].cpu().tolist())
-                GS_res1 = rearrange(GS_res1, "b d h w -> b (h w) d")
-                GS_res2 = self.gaussian_param_head2([tok.float() for tok in dec2], shape2[0].cpu().tolist())
-                GS_res2 = rearrange(GS_res2, "b d h w -> b (h w) d")
-            elif self.gs_params_head_type == 'dpt_gs':
+            if self.gs_params_head_type == 'dpt_gs':
                 GS_res1 = self.gaussian_param_head([tok[:, 0].float() for tok in dec_feat], all_mean_res[0]['pts3d'].permute(0, 3, 1, 2), images[:, 0, :3], shape[0, 0].cpu().tolist())
                 GS_res1 = rearrange(GS_res1, "b d h w -> b (h w) d")
                 all_other_params.append(GS_res1)
@@ -183,6 +170,8 @@ class EncoderNoPoSplatMulti(Encoder[EncoderNoPoSplatCfg]):
                     GS_res2 = self.gaussian_param_head2([tok[:, i].float() for tok in dec_feat], all_mean_res[i]['pts3d'].permute(0, 3, 1, 2), images[:, i, :3], shape[0, i].cpu().tolist())
                     GS_res2 = rearrange(GS_res2, "b d h w -> b (h w) d")
                     all_other_params.append(GS_res2)
+            else:
+                raise NotImplementedError(f"unexpected {self.gs_params_head_type=}")
 
         pts_all = [all_mean_res_i['pts3d'] for all_mean_res_i in all_mean_res]
         pts_all = torch.stack(pts_all, dim=1)

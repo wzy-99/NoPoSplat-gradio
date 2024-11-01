@@ -152,7 +152,7 @@ We thank the kindly help of [David Charatan](https://davidcharatan.com/#/) for p
 @article{ye2024noposplat,
       title   = {No Pose, No Problem: Surprisingly Simple 3D Gaussian Splats from Sparse Unposed Images},
       author  = {Ye, Botao and Liu, Sifei and Xu, Haofei and Xueting, Li and Pollefeys, Marc and Yang, Ming-Hsuan and Songyou, Peng},
-      journal = {arXiv preprint arXiv:xxxx.xxxx},
+      journal = {arXiv preprint arXiv:2410.24207},
       year    = {2024}
     }
 ```

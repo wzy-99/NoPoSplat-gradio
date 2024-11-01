@@ -121,7 +121,7 @@ def train(cfg_dict: DictConfig):
         distiller = distiller.eval()
 
     # Load the encoder weights.
-    if cfg.model.encoder.pretrained_weights:
+    if cfg.model.encoder.pretrained_weights and cfg.mode == "train":
         weight_path = cfg.model.encoder.pretrained_weights
         ckpt_weights = torch.load(weight_path, map_location='cpu')
         if 'model' in ckpt_weights:

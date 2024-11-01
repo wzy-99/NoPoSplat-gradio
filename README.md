@@ -108,7 +108,9 @@ Please refer to [DATASETS.md](DATASETS.md) for dataset preparation.
 
 ## Running the Code
 ### Training
-The main entry point is `src/main.py`. Call it via:
+First download the [Mast3r](https://download.europe.naverlabs.com/ComputerVision/MASt3R/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric.pth) pretrained model and put it in the `./pretrained_weights` directory.
+
+Then call `src/main.py` via:
 
 ```bash
 # 8 GPUs, with each batch size = 16. Remove the last two arguments if you don't want to use wandb for logging

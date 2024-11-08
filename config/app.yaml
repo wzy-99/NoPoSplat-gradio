@@ -4,6 +4,8 @@ defaults:
 
 seed: 111123
 
+resolution: 256
+
 checkpointing:
   load: pretrained_weights/re10k.ckpt
 

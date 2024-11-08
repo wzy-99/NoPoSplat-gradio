@@ -93,7 +93,7 @@ def construct_list_of_attributes(num_rest: int) -> list[str]:
 
 
 def export_ply(
-    extrinsics: Float[Tensor, "4 4"],
+    extrinsics: Float[Tensor, "4 4"] | None,
     means: Float[Tensor, "gaussian 3"],
     scales: Float[Tensor, "gaussian 3"],
     rotations: Float[Tensor, "gaussian 4"],

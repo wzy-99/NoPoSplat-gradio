@@ -25,6 +25,7 @@ with install_import_hook(
     from src.model.model_wrapper import ModelWrapper
     from src.config import DecoderCfg, EncoderCfg
     from src.dataset.types import BatchedExample, BatchedViews
+    from src.model.ply_export import export_ply
 
 
 def cyan(text: str) -> str:
@@ -34,22 +35,27 @@ def cyan(text: str) -> str:
 class APP:
     images: np.ndarray
 
-    def __init__(self, model):
+    def __init__(self, model, output_dir, resolution=256):
         self.model = model
+        self.output_dir = output_dir
+        if type(resolution) == int:
+            self.resolution = (resolution, resolution)
+        else:
+            self.resolution = resolution
 
     def launch(self):
         with gr.Blocks() as app:
             with gr.Row():
                 with gr.Column():
                     images = gr.Gallery(label="Input", type="numpy")
-                    fx = gr.Number(label="fx")
-                    fy = gr.Number(label="fy")
-                    cx = gr.Number(label="cx")
-                    cy = gr.Number(label="cy")
+                    fx = gr.Number(label="fx", value=0.8, minimum=0.0, maximum=2.0, step=0.01)
+                    fy = gr.Number(label="fy", value=0.8, minimum=0.0, maximum=2.0, step=0.01)
+                    cx = gr.Number(label="cx", value=0.5, minimum=0.0, maximum=1.0, step=0.01)
+                    cy = gr.Number(label="cy", value=0.5, minimum=0.0, maximum=1.0, step=0.01)
                     auto = gr.Checkbox(label="Auto-adjust", value=True)
                     apply = gr.Button(value="Apply")
                 with gr.Column():
-                    output = gr.Image(label="Output", type="numpy")
+                    output = gr.Model3D(label="Output")
             
             images.upload(self.on_upload, images)
             apply.click(self.on_apply, [cx, cy, fx, fy, auto], output)
@@ -59,19 +65,30 @@ class APP:
     def on_upload(self, inps: np.ndarray):
         images = []
         for (image, path) in inps:
-            images.append(image)
+            h, w = image.shape[:2]
+
+            if image.shape[2] == 4: # Remove alpha channel if present.
+                image = image[:, :, :3]
+
+            min_dim = min(h, w)
+            start_x = (w - min_dim) // 2
+            start_y = (h - min_dim) // 2
+            
+            cropped_image = image[start_y:start_y + min_dim, start_x:start_x + min_dim]
+            images.append(cropped_image)
+
         self.images = np.stack(images)
 
     def on_apply(self, cx: float, cy: float, fx: float, fy: float, auto: bool):
-        V, H, W, C = self.images.shape
-        B = 1
+        images = torch.from_numpy(self.images).permute(0, 3, 1, 2).float().cuda() / 255.0
+        images = torch.nn.functional.interpolate(images, size=self.resolution, mode='bilinear', align_corners=False)
+        images = images.unsqueeze(0)
 
         if auto:
-            cx, cy = W / 2, H / 2
-            fx = fy = min(W, H)
+            cx, cy = 0.5, 0.5
+            fx = fy = 0.8
 
-        intrinsics = torch.tensor([[fx, 0, cx], [0, fy, cy], [0, 0, 1]]).reshape(1, 1, 3, 3).repeat(1, 2, 1, 1).cuda()
-        images = torch.from_numpy(self.images).permute(0, 3, 1, 2).unsqueeze(0).float().cuda() / 255.0
+        intrinsics = torch.tensor([[fx, 0, cx], [0, fy, cy], [0, 0, 1]]).float().reshape(1, 1, 3, 3).repeat(1, 2, 1, 1).cuda()
 
         batch = BatchedExample(
             context=BatchedViews(
@@ -80,9 +97,30 @@ class APP:
             )
         )
         
-        output = self.model.predict(batch)
+        with torch.no_grad() and torch.autocast(device_type="cuda"):
+            gaussian, visualization_dump = self.model.predict(batch)
 
-        return 
+        paths = []
+        B = 1
+        for b in range(B):
+            means = gaussian.means[b]
+            covariances = gaussian.covariances[b]
+            harmonics = gaussian.harmonics[b]
+            opacities = gaussian.opacities[b]
+            rotations = visualization_dump['rotations'][b]
+            scales = visualization_dump['scales'][b]
+            export_ply(
+                extrinsics=None,
+                means=means,
+                scales=scales,
+                rotations=rotations,
+                harmonics=harmonics,
+                opacities=opacities,
+                path=Path(self.output_dir) / f"output_{b}.ply",
+            )
+            paths.append(os.path.join(self.output_dir, f"output_{b}.ply"))
+
+        return paths[-1] # TODO: return all paths
 
 
 @hydra.main(
@@ -128,7 +166,7 @@ def train(cfg_dict: DictConfig):
     model_wrapper.load_state_dict(state_dict)
     model_wrapper.cuda()
 
-    app = APP(model_wrapper)
+    app = APP(model_wrapper, output_dir=output_dir, resolution=cfg_dict.resolution)
 
     app.launch()
 

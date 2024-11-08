@@ -214,14 +214,17 @@ class ModelWrapper(LightningModule):
     def predict(self, batch):
         batch: BatchedExample = self.data_shim(batch)
 
+        visualization_dump = {}
+
         # Render Gaussians.
         with self.benchmarker.time("encoder"):
             gaussians = self.encoder(
                 batch["context"],
                 self.global_step,
+                visualization_dump
             )
 
-        return gaussians
+        return gaussians, visualization_dump
 
     def test_step(self, batch, batch_idx):
         batch: BatchedExample = self.data_shim(batch)

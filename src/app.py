@@ -45,6 +45,9 @@ class APP:
 
     def launch(self):
         with gr.Blocks() as app:
+            description = gr.Markdown(
+                "Upload two same-size images to generate a 3DGS cloud. If the images are not square, they will be cropped to the smallest dimension."
+            )
             with gr.Row():
                 with gr.Column():
                     images = gr.Gallery(label="Input", type="numpy")
@@ -53,6 +56,9 @@ class APP:
                     cx = gr.Number(label="cx", value=0.5, minimum=0.0, maximum=1.0, step=0.01)
                     cy = gr.Number(label="cy", value=0.5, minimum=0.0, maximum=1.0, step=0.01)
                     auto = gr.Checkbox(label="Auto-adjust", value=True)
+                    help_text = gr.Markdown(
+                        "if checked, the camera intrinsics will be automatically adjusted to match the input images"
+                    )
                     apply = gr.Button(value="Apply")
                 with gr.Column():
                     output = gr.Model3D(label="Output")
@@ -80,6 +86,8 @@ class APP:
         self.images = np.stack(images)
 
     def on_apply(self, cx: float, cy: float, fx: float, fy: float, auto: bool):
+        assert self.images is not None, "Please upload two images first."
+        assert len(self.images) == 2, "Please upload two images."
         images = torch.from_numpy(self.images).permute(0, 3, 1, 2).float().cuda() / 255.0
         images = torch.nn.functional.interpolate(images, size=self.resolution, mode='bilinear', align_corners=False)
         images = images.unsqueeze(0)

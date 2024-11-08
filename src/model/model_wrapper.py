@@ -98,13 +98,13 @@ class ModelWrapper(LightningModule):
 
     def __init__(
         self,
-        optimizer_cfg: OptimizerCfg,
-        test_cfg: TestCfg,
-        train_cfg: TrainCfg,
+        optimizer_cfg: OptimizerCfg | None,
+        test_cfg: TestCfg | None,
+        train_cfg: TrainCfg | None,
         encoder: Encoder,
         encoder_visualizer: Optional[EncoderVisualizer],
         decoder: Decoder,
-        losses: list[Loss],
+        losses: list[Loss] | None,
         step_tracker: StepTracker | None,
         distiller: Optional[nn.Module] = None,
     ) -> None:
@@ -208,8 +208,23 @@ class ModelWrapper(LightningModule):
         # Tell the data loader processes about the current step.
         if self.step_tracker is not None:
             self.step_tracker.set_step(self.global_step)
-
+            
         return total_loss
+
+    def predict(self, batch):
+        batch: BatchedExample = self.data_shim(batch)
+
+        visualization_dump = {}
+
+        # Render Gaussians.
+        with self.benchmarker.time("encoder"):
+            gaussians = self.encoder(
+                batch["context"],
+                self.global_step,
+                visualization_dump
+            )
+
+        return gaussians, visualization_dump
 
     def test_step(self, batch, batch_idx):
         batch: BatchedExample = self.data_shim(batch)

@@ -1,0 +1,14 @@
+defaults:
+  - model/encoder: noposplat
+  - model/decoder: splatting_cuda
+
+seed: 111123
+
+resolution: 256
+
+checkpointing:
+  load: pretrained_weights/re10k.ckpt
+
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d_%H-%M-%S}

@@ -1,3 +1,14 @@
+[tool.poetry]
+name = "NoPoSplat"
+version = "0.1.0"
+description = ""
+authors = ["cvg"]
+packages = [{include = "**/*", from = "src", to = "noposplat"}]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
 [tool.ruff]
 # Enable Pyflakes `E` and `F` codes by default.
 select = ["E", "F", "I"]
